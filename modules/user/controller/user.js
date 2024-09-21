@@ -10,7 +10,7 @@ exports.register = async (req, res) => {
     const {
       email,
       password,
-      firsName,
+      firstName,
       lastName,
       phoneNumber,
       dateOfBirth,
@@ -28,14 +28,17 @@ exports.register = async (req, res) => {
     const child = await User.find({
       "parentReferel.parentId": parentReferel.parentId,
     });
-
     if (child.length > 1) {
       return res.status(400).json({
         success: false,
         message: "This leader already have complete pair",
       });
     }
-    if (child.some((a) => a.referralType === parentReferel?.referralType)) {
+    if (
+      child.some(
+        (a) => a.parentReferel.referralType === parentReferel?.referralType
+      )
+    ) {
       return res.status(400).json({
         success: false,
         message: `Referel Type of side ${parentReferel.referralType}  already exist`,
@@ -49,7 +52,7 @@ exports.register = async (req, res) => {
     const newUser = await User.create({
       email,
       password: hashedPassword,
-      firsName,
+      firstName,
       lastName,
       phoneNumber,
       dateOfBirth,
@@ -61,7 +64,6 @@ exports.register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "user registered successfully",
-      token,
       user: {
         id: newUser._id,
         email: newUser.email,
@@ -107,18 +109,38 @@ exports.login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRE_TIME,
     });
 
-    // Send back the token and user info
+    const direct = await User.find({ "parentReferel.parentId": user._id });
+    const parent =
+      user.parentReferel.parentId !== "abc123"
+        ? await User.findOne({
+            _id: new ObjectId(user.parentReferel.parentId),
+          })
+        : {};
+
     res.status(200).json({
       success: true,
       token,
       user: {
         id: user._id,
         email: user.email,
-        title: user.title,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        country: user.country,
-        stripe_customer_id: user.stripe_customer_id,
+        isActive: user.isActive,
+        fullName: user.firstName + " " + user.lastName,
+        parent: user.parentReferel,
+        docileWallet: user.walletAmount,
+        referralBonus: user.referelBonus,
+      },
+      directPartners: direct.map((dt) => {
+        return {
+          id: dt._id,
+          parentReferel: dt.parentReferel,
+          email: dt.email,
+          isActive: dt.isActive,
+          fullName: dt.firstName + " " + dt.lastName,
+        };
+      }),
+      leader: {
+        id: parent?._id || 0,
+        fullName: (parent.firstName || "") + " " + (parent.lastName || ""),
       },
     });
   } catch (err) {
