@@ -65,7 +65,7 @@ exports.register = async (req, res) => {
       success: true,
       message: "user registered successfully",
       user: {
-        id: newUser._id,
+        docileId: newUser._id,
         email: newUser.email,
         fullName: newUser.bankDetails.fullName,
         dateOfJoin: newUser.createdAt,
@@ -110,18 +110,17 @@ exports.login = async (req, res) => {
     });
 
     const direct = await User.find({ "parentReferel.parentId": user._id });
-    const parent =
-      user.parentReferel.parentId !== "abc123"
-        ? await User.findOne({
-            _id: new ObjectId(user.parentReferel.parentId),
-          })
-        : {};
+    const parent = user.parentReferel.parentId
+      ? await User.findOne({
+          _id: new ObjectId(user.parentReferel.parentId),
+        })
+      : {};
 
     res.status(200).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        docileId: user._id,
         email: user.email,
         isActive: user.isActive,
         fullName: user.firstName + " " + user.lastName,
@@ -131,7 +130,7 @@ exports.login = async (req, res) => {
       },
       directPartners: direct.map((dt) => {
         return {
-          id: dt._id,
+          docileId: dt._id,
           parentReferel: dt.parentReferel,
           email: dt.email,
           isActive: dt.isActive,
@@ -139,12 +138,126 @@ exports.login = async (req, res) => {
         };
       }),
       leader: {
-        id: parent?._id || 0,
-        fullName: (parent.firstName || "") + " " + (parent.lastName || ""),
+        docileId: parent?._id || 0,
+        fullName: (parent?.firstName || "") + " " + (parent?.lastName || ""),
       },
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.rootRegister = async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      bankDetails,
+    } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      bankDetails,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "root user registered successfully",
+      user: {
+        docileId: newUser._id,
+        email: newUser.email,
+        fullName: newUser.bankDetails.fullName,
+        dateOfJoin: newUser.createdAt,
+        phoneNumber: newUser.phoneNumber,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getRootUsers = async (req, res) => {
+  try {
+    const users = await User.find({ "parentReferel.parentId": null });
+    res.status(200).json({
+      success: true,
+      users: users.map((user) => {
+        return {
+          docileId: user._id,
+          email: user.email,
+          fullName: user.bankDetails.fullName,
+          phoneNumber: user.phoneNumber,
+        };
+      }),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.userDetail = async (req, res) => {
+  try {
+    const { user_id } = req?.user;
+
+    const user = await User.findOne({ _id: user_id });
+    const direct = await User.find({ "parentReferel.parentId": user_id });
+    const parent = user.parentReferel.parentId
+      ? await User.findOne({
+          _id: new ObjectId(user.parentReferel.parentId),
+        })
+      : {};
+
+    res.status(200).json({
+      success: true,
+      user: {
+        docileId: user._id,
+        email: user.email,
+        isActive: user.isActive,
+        fullName: user.firstName + " " + user.lastName,
+        docileWallet: user.walletAmount,
+        referralBonus: user.referelBonus,
+      },
+      directPartners: direct.map((dt) => {
+        return {
+          docileId: dt._id,
+          parentReferel: dt.parentReferel,
+          email: dt.email,
+          isActive: dt.isActive,
+          fullName: dt.firstName + " " + dt.lastName,
+        };
+      }),
+      leader: {
+        docileId: parent?._id || 0,
+        fullName: (parent?.firstName || "") + " " + (parent?.lastName || ""),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
