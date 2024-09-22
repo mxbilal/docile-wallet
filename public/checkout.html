@@ -1,23 +1,129 @@
 <!DOCTYPE html>
 <html>
 
+<head>
+  <title>Account Activation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff0099;
+      text-align: center;
+    }
+
+    .activation-section {
+      color: #ff0099;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .details {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .details p {
+      margin: 5px 0;
+    }
+
+    .details .inactive {
+      color: red;
+      font-weight: bold;
+    }
+
+    .product-info {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .product-info p {
+      margin: 8px 0;
+    }
+
+    .product-info .cost {
+      font-size: 24px;
+      font-weight: bold;
+      color: black;
+    }
+
+    .product-info .note {
+      color: #ff0099;
+      font-size: 12px;
+    }
+
+    button {
+      margin-top: 5px;
+      width: 100px;
+      padding: 10px;
+      background-color: aliceblue;
+      border: 1px solid lightgray;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
 <body>
-  <form method="POST" action="https://api.razorpay.com/v1/checkout/embedded">
-    <input type="hidden" name="key_id" value="rzp_test_HPLJglkcc8xddF" />
-    <input type="hidden" name="amount" value=1500000 />
-    <input type="hidden" name="order_id" value="order_P0Auhm4VuevrOP" />
-    <input type="hidden" name="name" value="Acme Corp" />
-    <input type="hidden" name="description" value="A Wild Sheep Chase" />
-    <input type="hidden" name="image" value="https://cdn.razorpay.com/logos/BUVwvgaqVByGp2_large.jpg" />
-    <input type="hidden" name="prefill[name]" value="Gaurav Kumar" />
-    <input type="hidden" name="prefill[contact]" value="9123456780" />
-    <input type="hidden" name="prefill[email]" value="gaurav.kumar@example.com" />
-    <input type="hidden" name="notes[shipping address]"
-      value="L-16, The Business Centre, 61 Wellfield Road, New Delhi - 110001" />
-    <input type="hidden" name="callback_url" value="http://localhost:3000/payment/callback" />
-    <input type="hidden" name="cancel_url" value="https://example.com/payment-cancel" />
-    <button>Submit</button>
-  </form>
+  <div class="container">
+    <div class="header">
+      Welcome Sridhar Reddy!
+    </div>
+
+    <div class="activation-section">
+      ACCOUNT ACTIVATION
+    </div>
+    <p>Account will be activated when you buy our product.</p>
+
+    <div class="details">
+      <p><strong>DO ID - Docile ID</strong>: D6382489 <span class="inactive">● Inactive</span></p>
+      <p><strong>Full Name</strong>: Kiran Joshi</p>
+    </div>
+
+    <div class="product-info">
+      <p><strong>Product</strong>: Docile Partner Program Membership</p>
+      <p><strong>Product Type</strong>: New Purchase - 1</p>
+      <p class="cost"><strong>Product Cost</strong>: ₹ 15,000</p>
+      <p><strong>Product Return Value</strong>: ₹ 15,000</p>
+      <p class="note">You can use this amount to buy groceries in Docile</p>
+    </div>
+
+    <form method="POST" action="https://api.razorpay.com/v1/checkout/embedded">
+      <input type="hidden" name="key_id" value="rzp_test_HPLJglkcc8xddF" />
+      <input type="hidden" name="amount" value=1500000 />
+      <input type="hidden" name="order_id" value="order_P0Auhm4VuevrOP" />
+      <input type="hidden" name="name" value="Acme Corp" />
+      <input type="hidden" name="description" value="A Wild Sheep Chase" />
+      <input type="hidden" name="image" value="https://cdn.razorpay.com/logos/BUVwvgaqVByGp2_large.jpg" />
+      <input type="hidden" name="prefill[name]" value="Gaurav Kumar" />
+      <input type="hidden" name="prefill[contact]" value="9123456780" />
+      <input type="hidden" name="prefill[email]" value="gaurav.kumar@example.com" />
+      <input type="hidden" name="notes[shipping address]"
+        value="L-16, The Business Centre, 61 Wellfield Road, New Delhi - 110001" />
+      <input type="hidden" name="callback_url" value="http://localhost:3000/payment/callback" />
+      <input type="hidden" name="cancel_url" value="https://example.com/payment-cancel" />
+      <button>Pay Now</button>
+    </form>
+  </div>
 </body>
 
 </html>
