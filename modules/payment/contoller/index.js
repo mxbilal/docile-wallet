@@ -1,0 +1,85 @@
+require("dotenv").config();
+const Razorpay = require('razorpay');
+const PaymentModel = require("../model");
+var ObjectId = require("mongoose").Types.ObjectId;
+const userModel = require("../../user/models/userModel")
+const { validatePaymentVerification } = require("razorpay/dist/utils/razorpay-utils");
+var instance = new Razorpay({ key_id: process.env.RAZORPAY_ID, key_secret: process.env.RAZORPAY_SECRET })
+
+exports.createOrder = async (req, res) => {
+  try {
+    const order = await instance.orders.create({
+      "amount": 1500000,
+      "currency": "INR",
+      "receipt": "receipt#1",
+      "partial_payment": false,
+      "notes": {
+        "key1": "value3",
+        "key2": "value2"
+      }
+    })
+    
+    await PaymentModel.create({ order, user_id: "m_afshal" })
+    return res.status(200).send({ success: true, data: order })
+  } catch(err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+exports.razorpayCallback = async (req, res) => {
+  try {
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, error } = req?.body
+    console.log(error)
+    if(error) {
+      return res.redirect(process.env.ERROR_PAGE)
+    }
+
+    const userOrder = await PaymentModel.findOne({ "order.id": razorpay_order_id })
+
+    if(!userOrder) {
+      return res.redirect(process.env.ERROR_PAGE)
+    }
+
+    const paymentValidate = await validatePaymentVerification({"order_id": userOrder?.order?.id, "payment_id": razorpay_payment_id }, razorpay_signature, process.env.RAZORPAY_SECRET)
+    if(!paymentValidate) {
+      return res.redirect(process.env.ERROR_PAGE)
+    }
+
+    console.log("paymentValidate", paymentValidate)
+
+    const capturedPayment = await instance.payments.capture(razorpay_payment_id, userOrder?.order?.amount || 0, "INR")
+    console.log("capturedPayment", capturedPayment)
+
+    await PaymentModel.updateOne({ "order.id": userOrder?.order?.id }, { $set: {
+      "order.status": capturedPayment?.status,
+      razorpay_payment_id
+    } })
+
+    const user = await userModel.findOneAndUpdate({ _id: new ObjectId(userOrder?.user_id) }, { $set: { walletAmount: 16500, isActive: true } }, {
+      returnDocument: "after",
+      returnNewDocument: true
+    })
+
+    const parentReferel = await userModel.findOne({ _id: new ObjectId(user?.parentReferel?.parentId) })
+    let updateParent = {}
+    if(parentReferel?.bonusCount === 0) {
+      updateParent = {
+        bonusCount: 1,
+        referelBonus: 500,
+      }
+    } else if(parentReferel?.bonusCount === 1) {
+      updateParent = {
+        bonusCount: 2,
+        referelBonus: 1300,
+      }
+    }
+
+    await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent })
+
+    return res.redirect(process.env.SUCCESS_PAGE);
+  } catch(err) {
+    console.error(err)
+    res.redirect(process.env.ERROR_PAGE)
+  }
+}
