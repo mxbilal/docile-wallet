@@ -19,7 +19,9 @@ exports.register = async (req, res) => {
       bankDetails,
     } = req.body;
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({
+      $or: [{ email }, { phoneNumber }],
+    });
     if (userExists) {
       return res
         .status(400)
@@ -79,21 +81,21 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { docileId, password } = req.body;
+  const { phoneNumber, password } = req.body;
 
-  if (!docileId || !password) {
+  if (!phoneNumber || !password) {
     return res.status(400).json({
       success: false,
-      message: "Please provide both Docile ID and password",
+      message: "Please provide both phone number and password",
     });
   }
 
   try {
-    const user = await User.findOne({ _id: new ObjectId(docileId) });
+    const user = await User.findOne({ phoneNumber });
     if (!user) {
       return res.status(403).json({
         success: false,
-        message: "Invalid Docile ID or password",
+        message: "Invalid phone number or password",
       });
     }
 
@@ -101,7 +103,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(403).json({
         success: false,
-        message: "Invalid Docile ID or password",
+        message: "Invalid password",
       });
     }
 
@@ -122,7 +124,7 @@ exports.login = async (req, res) => {
       user: {
         docileId: user._id,
         email: user.email,
-        isActive: user.isActive,
+        isActivePartner: user.isActivePartner,
         fullName: user.firstName + " " + user.lastName,
         parent: user.parentReferel,
         docileWallet: user.walletAmount,
@@ -133,7 +135,7 @@ exports.login = async (req, res) => {
           docileId: dt._id,
           parentReferel: dt.parentReferel,
           email: dt.email,
-          isActive: dt.isActive,
+          isActivePartner: dt.isActivePartner,
           fullName: dt.firstName + " " + dt.lastName,
         };
       }),
@@ -237,7 +239,7 @@ exports.userDetail = async (req, res) => {
       user: {
         docileId: user._id,
         email: user.email,
-        isActive: user.isActive,
+        isActivePartner: user.isActivePartner,
         fullName: user.firstName + " " + user.lastName,
         docileWallet: user.walletAmount,
         referralBonus: user.referelBonus,
@@ -247,7 +249,7 @@ exports.userDetail = async (req, res) => {
           docileId: dt._id,
           parentReferel: dt.parentReferel,
           email: dt.email,
-          isActive: dt.isActive,
+          isActivePartner: dt.isActivePartner,
           fullName: dt.firstName + " " + dt.lastName,
         };
       }),

@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
       enum: ["Male", "Female", "Other"],
       required: [true, "Please specify your gender"],
     },
-    isActive: { type: Boolean, default: false },
+    isActivePartner: { type: Boolean, default: false },
     bonusCount: { type: Number, default: 0 },
     walletAmount: { type: Number, default: 0 },
     referelBonus: { type: Number, default: 0 },
