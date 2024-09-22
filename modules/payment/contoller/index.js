@@ -8,6 +8,8 @@ var instance = new Razorpay({ key_id: process.env.RAZORPAY_ID, key_secret: proce
 
 exports.createOrder = async (req, res) => {
   try {
+    const { user_id } = req?.user;
+    console.log(user_id)
     const order = await instance.orders.create({
       "amount": 1500000,
       "currency": "INR",
@@ -19,7 +21,7 @@ exports.createOrder = async (req, res) => {
       }
     })
     
-    await PaymentModel.create({ order, user_id: "m_afshal" })
+    await PaymentModel.create({ order, user_id })
     return res.status(200).send({ success: true, data: order })
   } catch(err) {
     console.error(err)
@@ -36,6 +38,8 @@ exports.razorpayCallback = async (req, res) => {
     }
 
     const userOrder = await PaymentModel.findOne({ "order.id": razorpay_order_id })
+
+    console.log(userOrder)
 
     if(!userOrder) {
       return res.redirect(process.env.ERROR_PAGE)
@@ -61,21 +65,25 @@ exports.razorpayCallback = async (req, res) => {
       returnNewDocument: true
     })
 
-    const parentReferel = await userModel.findOne({ _id: new ObjectId(user?.parentReferel?.parentId) })
-    let updateParent = {}
-    if(parentReferel?.bonusCount === 0) {
-      updateParent = {
-        bonusCount: 1,
-        referelBonus: 500,
-      }
-    } else if(parentReferel?.bonusCount === 1) {
-      updateParent = {
-        bonusCount: 2,
-        referelBonus: 1300,
-      }
-    }
+    console.log("user", user)
 
-    await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent })
+    if(user?.parentReferel?.parentId) {
+      const parentReferel = await userModel.findOne({ _id: new ObjectId(user?.parentReferel?.parentId) })
+      let updateParent = {}
+      if(parentReferel?.bonusCount === 0) {
+        updateParent = {
+          bonusCount: 1,
+          referelBonus: 5000,
+        }
+      } else if(parentReferel?.bonusCount === 1) {
+        updateParent = {
+          bonusCount: 2,
+          referelBonus: 13000,
+        }
+      }
+  
+      await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent })
+    }
 
     return res.redirect(process.env.SUCCESS_PAGE);
   } catch(err) {

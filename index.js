@@ -12,7 +12,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 dbConnect();
-
+app.use(express.static('public'))
 app.use("/user", userRoute);
 app.use("/payment", paymentRoute);
 
