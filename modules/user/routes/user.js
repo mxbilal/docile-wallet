@@ -17,4 +17,5 @@ router.get("/root-users", getRootUsers);
 router.use("", authenticateToken);
 router.get("", userDetail);
 
+
 module.exports = router;
