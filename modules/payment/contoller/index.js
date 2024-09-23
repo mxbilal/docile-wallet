@@ -88,14 +88,12 @@ exports.razorpayCallback = async (req, res) => {
 
     const user = await userModel.findOneAndUpdate(
       { _id: new ObjectId(userOrder?.user_id) },
-      { $set: { walletAmount: 16500, isActive: true } },
+      { $set: { walletAmount: 16500, isActivePartner: true } },
       {
         returnDocument: "after",
         returnNewDocument: true,
       }
     );
-
-    console.log("user", user);
 
     if (user?.parentReferel?.parentId) {
       const parentReferel = await userModel.findOne({
@@ -142,8 +140,10 @@ exports.getPayment = async (req, res) => {
         },
         order: {
           amount: (payment?.order?.amount || 0) / 100,
-          time: payment.updatedAt,
-          status: payStatus[payment.order?.status] || "Failed",
+          time: payment?.updatedAt,
+          status: payment?.order
+            ? payStatus[payment?.order?.status] || "Failed"
+            : "No order",
         },
       },
     });
