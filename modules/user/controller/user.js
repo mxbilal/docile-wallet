@@ -15,6 +15,7 @@ exports.register = async (req, res) => {
       phoneNumber,
       dateOfBirth,
       gender,
+      aadharNumber,
       parentReferel,
       bankDetails,
     } = req.body;
@@ -59,6 +60,7 @@ exports.register = async (req, res) => {
       phoneNumber,
       dateOfBirth,
       gender,
+      aadharNumber,
       parentReferel,
       bankDetails,
     });
@@ -243,6 +245,7 @@ exports.userDetail = async (req, res) => {
         fullName: user.firstName + " " + user.lastName,
         docileWallet: user.walletAmount,
         referralBonus: user.referelBonus,
+        phoneNumber: user?.phoneNumber,
       },
       directPartners: direct.map((dt) => {
         return {
@@ -251,11 +254,13 @@ exports.userDetail = async (req, res) => {
           email: dt.email,
           isActivePartner: dt.isActivePartner,
           fullName: dt.firstName + " " + dt.lastName,
+          phoneNumber: dt.phoneNumber,
         };
       }),
       leader: {
         docileId: parent?._id || 0,
         fullName: (parent?.firstName || "") + " " + (parent?.lastName || ""),
+        phoneNumber: parent?.phoneNumber,
       },
     });
   } catch (err) {
