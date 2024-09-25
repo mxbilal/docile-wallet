@@ -128,8 +128,8 @@ exports.razorpayCallback = async (req, res) => {
 exports.getPayment = async (req, res) => {
   try {
     const { user_id } = req?.user;
-    const user = await User.find();
-    const payment = await PaymentModel.findOne({ user_id });
+    const user = await User.find({ _id: new ObjectId(user_id) });
+    const payment = await PaymentModel.find();
     res.status(200).json({
       result: {
         userInfo: {
