@@ -128,8 +128,8 @@ exports.razorpayCallback = async (req, res) => {
 exports.getPayment = async (req, res) => {
   try {
     const { user_id } = req?.user;
-    const user = await User.find({ _id: new ObjectId(user_id) });
-    const payment = await PaymentModel.find();
+    const user = await User.findOne({ _id: new ObjectId(user_id) });
+    const payments = await PaymentModel.find();
     res.status(200).json({
       result: {
         userInfo: {
@@ -138,13 +138,15 @@ exports.getPayment = async (req, res) => {
           fullName: user.bankDetails.fullName,
           phoneNumber: user.phoneNumber,
         },
-        order: {
-          amount: (payment?.order?.amount || 0) / 100,
-          time: payment?.updatedAt,
-          status: payment?.order
-            ? payStatus[payment?.order?.status] || "Failed"
-            : "No order",
-        },
+        order: payments.map((payment) => {
+          return {
+            amount: (payment?.order?.amount || 0) / 100,
+            time: payment?.updatedAt,
+            status: payment?.order
+              ? payStatus[payment?.order?.status] || "Failed"
+              : "No order",
+          };
+        }),
       },
     });
   } catch (err) {
