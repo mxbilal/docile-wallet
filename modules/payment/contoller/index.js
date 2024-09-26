@@ -127,28 +127,34 @@ exports.razorpayCallback = async (req, res) => {
 
 exports.getPayment = async (req, res) => {
   try {
-    const { user_id } = req?.user;
-    const user = await User.findOne({ _id: new ObjectId(user_id) });
-    const payments = await PaymentModel.find();
-    res.status(200).json({
-      result: {
+    // Retrieve all payments and populate the associated user's data
+    const payments = await PaymentModel.find().populate(
+      "user_id",
+      "email bankDetails.fullName phoneNumber"
+    );
+
+    // Format the payments to include user info and order details
+    const formattedPayments = payments.map((payment) => {
+      const user = payment.user_id; // This should now contain full user details
+
+      return {
         userInfo: {
-          docileId: user_id,
+          docileId: user._id,
           email: user.email,
-          fullName: user.bankDetails.fullName,
+          fullName: user?.bankDetails?.fullName || "N/A", // Handle cases where bankDetails might not exist
           phoneNumber: user.phoneNumber,
         },
-        order: payments.map((payment) => {
-          return {
-            amount: (payment?.order?.amount || 0) / 100,
-            time: payment?.updatedAt,
-            status: payment?.order
-              ? payStatus[payment?.order?.status] || "Failed"
-              : "No order",
-          };
-        }),
-      },
+        order: {
+          amount: (payment?.order?.amount || 0) / 100,
+          time: payment?.updatedAt,
+          status: payment?.order
+            ? payStatus[payment?.order?.status] || "Failed"
+            : "No order",
+        },
+      };
     });
+
+    res.status(200).json({ result: formattedPayments });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });

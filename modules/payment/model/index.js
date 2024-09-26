@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 const paymentSchema = new mongoose.Schema(
   {
     order: {
-      type: mongoose.Schema.Types.Mixed
+      type: mongoose.Schema.Types.Mixed,
     },
-    user_id: String,
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
     razorpay_payment_id: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
   { timestamps: true }
 );
