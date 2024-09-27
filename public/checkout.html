@@ -109,8 +109,8 @@
 
     <form method="POST" action="https://api.razorpay.com/v1/checkout/embedded">
       <input type="hidden" name="key_id" value="rzp_test_HPLJglkcc8xddF" />
-      <input type="hidden" name="amount" value=1500000 />
-      <input type="hidden" name="order_id" value="order_P0TnsEt5H4n0fq" />
+      <input type="hidden" name="amount" value="900" />
+      <input type="hidden" name="order_id" value="order_P2Aig6rRnUdSV7" />
       <input type="hidden" name="name" value="Acme Corp" />
       <input type="hidden" name="description" value="A Wild Sheep Chase" />
       <input type="hidden" name="image" value="https://cdn.razorpay.com/logos/BUVwvgaqVByGp2_large.jpg" />
@@ -119,7 +119,7 @@
       <input type="hidden" name="prefill[email]" value="gaurav.kumar@example.com" />
       <input type="hidden" name="notes[shipping address]"
         value="L-16, The Business Centre, 61 Wellfield Road, New Delhi - 110001" />
-      <input type="hidden" name="callback_url" value="http://localhost:3000/payment/callback" />
+      <input type="hidden" name="callback_url" value="http://localhost:3004/payment/callback" />
       <input type="hidden" name="cancel_url" value="https://example.com/payment-cancel" />
       <button>Pay Now</button>
     </form>

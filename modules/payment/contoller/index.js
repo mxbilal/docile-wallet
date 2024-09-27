@@ -69,22 +69,18 @@ exports.razorpayCallback = async (req, res) => {
 
     console.log("paymentValidate", paymentValidate);
 
-    const capturedPayment = await instance.payments.capture(
-      razorpay_payment_id,
-      userOrder?.order?.amount || 0,
-      "INR"
-    );
-    console.log("capturedPayment", capturedPayment);
+    const fetchPayment = await instance.payments.fetch(razorpay_payment_id);
+    console.log("fetchPayment", fetchPayment);
 
     await PaymentModel.updateOne(
       { "order.id": userOrder?.order?.id },
       {
         $set: {
-          "order.status": capturedPayment?.status,
+          "order.status": fetchPayment?.status,
           razorpay_payment_id,
         },
       }
-    );
+    );``
 
     const user = await userModel.findOneAndUpdate(
       { _id: new ObjectId(userOrder?.user_id) },
