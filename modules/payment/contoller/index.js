@@ -17,7 +17,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { user_id } = req?.user;
     const order = await instance.orders.create({
-      amount: 900,
+      amount: 1500000,
       currency: "INR",
       receipt: "receipt#1",
       partial_payment: false,
@@ -80,7 +80,8 @@ exports.razorpayCallback = async (req, res) => {
           razorpay_payment_id,
         },
       }
-    );``
+    );
+    ``;
 
     const user = await userModel.findOneAndUpdate(
       { _id: new ObjectId(userOrder?.user_id) },
