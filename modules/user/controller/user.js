@@ -168,7 +168,9 @@ exports.rootRegister = async (req, res) => {
       bankDetails,
     } = req.body;
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({
+      $or: [{ email }, { phoneNumber }],
+    });
     if (userExists) {
       return res
         .status(400)
