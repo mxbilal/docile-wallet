@@ -17,7 +17,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { user_id } = req?.user;
     const order = await instance.orders.create({
-      amount: 1500000,
+      amount: 900,
       currency: "INR",
       receipt: "receipt#1",
       partial_payment: false,
