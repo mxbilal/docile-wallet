@@ -100,12 +100,12 @@ exports.razorpayCallback = async (req, res) => {
       if (parentReferel?.bonusCount === 0) {
         updateParent = {
           bonusCount: 1,
-          referelBonus: 5000,
+          referelBonus: 1000,
         };
       } else if (parentReferel?.bonusCount === 1) {
         updateParent = {
           bonusCount: 2,
-          referelBonus: 13000,
+          referelBonus: 4000,
         };
       }
 
