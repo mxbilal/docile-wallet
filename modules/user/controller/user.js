@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 var ObjectId = require("mongoose").Types.ObjectId;
+const withDrawRequestsModel = require("../../payment/model/withdraw_requests");
 
 // Register user
 exports.register = async (req, res) => {
@@ -242,6 +243,8 @@ exports.userDetail = async (req, res) => {
         })
       : {};
 
+    const inProgressWithDraws = await withDrawRequestsModel?.find({ user_id: user?._id, status: "in-progress" })
+
     res.status(200).json({
       success: true,
       user: {
@@ -268,6 +271,7 @@ exports.userDetail = async (req, res) => {
         fullName: (parent?.firstName || "") + " " + (parent?.lastName || ""),
         phoneNumber: parent?.phoneNumber,
       },
+      in_progress_with_draws: inProgressWithDraws?.length ? inProgressWithDraws.reduce(function (acc, obj) { return acc + obj.amount; }, 0) : null
     });
   } catch (err) {
     console.error(err);
