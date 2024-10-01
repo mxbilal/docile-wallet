@@ -3,6 +3,7 @@ const Razorpay = require("razorpay");
 const PaymentModel = require("../model");
 var ObjectId = require("mongoose").Types.ObjectId;
 const userModel = require("../../user/models/userModel");
+const withDrawRequestModel = require("../model/withdraw_requests");
 const {
   validatePaymentVerification,
 } = require("razorpay/dist/utils/razorpay-utils");
@@ -157,3 +158,61 @@ exports.getPayment = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+exports.withDrawRequest = async (req, res) => {
+  try {
+    const { user_id } = req?.user;
+    const { amount } = req?.body;
+
+    const user = await userModel?.findOne({ _id: new ObjectId(user_id) });
+
+    if(parseInt(user?.referelBonus) < parseInt(amount)) {
+      return res.status(400).json({ success: false, message: "requested amount is greater than bonus amount" });
+    }
+
+    const remainingBonus = parseInt(user?.referelBonus) - parseInt(amount)
+
+    await userModel?.updateOne({ _id: new ObjectId(user_id) }, { $set: { referelBonus: remainingBonus } })
+
+    await withDrawRequestModel?.create({
+      user_id,
+      amount
+    })
+
+    return res.status(200).json({ success: true, message: 'withdraw requested' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.withDrawRequests = async (req, res) => {
+  try {
+    const withDraws = await withDrawRequestModel.find().populate("user_id", "-password")
+    const userData = withDraws?.map(data => ({ id: data?._id, amount: data?.amount, user: { ...data?.user_id?.bankDetails, docileId: data?.user_id?.phoneNumber } }))
+    return res.status(200).json({ success: true, userData });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+exports.updateWithDrawRequest = async (req, res) => {
+  try {
+    const { id } = req?.params;
+    const { status } = req?.body;
+
+    const request = await withDrawRequestModel.findByIdAndUpdate(id, { status }, { new: true })
+    if(status === 'rejected') {
+      await userModel?.updateOne({ _id: new ObjectId(request?.user_id) }, { $inc: { referelBonus: request?.amount } })
+    }
+    return res.status(200).json({ success: true, message: "status updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
