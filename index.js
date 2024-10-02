@@ -17,5 +17,5 @@ app.use("/user", userRoute);
 app.use("/payment", paymentRoute);
 
 app.listen(3004, "0.0.0.0", () => {
-  console.log("Server is running on port 3000");
+  console.log("Server is running on port 3004");
 });
