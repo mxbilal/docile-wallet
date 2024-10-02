@@ -16,6 +16,6 @@ app.use(express.static("public"));
 app.use("/user", userRoute);
 app.use("/payment", paymentRoute);
 
-app.listen(3004, "0.0.0.0", () => {
-  console.log("Server is running on port 3004");
+app.listen(3000, "0.0.0.0", () => {
+  console.log("Server is running on port 3000");
 });
