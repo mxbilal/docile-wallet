@@ -243,7 +243,10 @@ exports.userDetail = async (req, res) => {
         })
       : {};
 
-    const inProgressWithDraws = await withDrawRequestsModel?.find({ user_id: user?._id, status: "in-progress" })
+    const inProgressWithDraws = await withDrawRequestsModel?.find({
+      user_id: user?._id,
+      status: "in-progress",
+    });
 
     res.status(200).json({
       success: true,
@@ -253,9 +256,15 @@ exports.userDetail = async (req, res) => {
         isActivePartner: user.isActivePartner,
         fullName: user.firstName + " " + user.lastName,
         docileWallet: user.walletAmount,
+        firstName: user.firstName,
+        lastName: user.lastName,
         referralBonus: user.referelBonus,
-        phoneNumber: user?.phoneNumber,
+        phoneNumber: user.phoneNumber,
+        aadharNumber: user?.aadharNumber,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
       },
+      bankDetails: user.bankDetails,
       directPartners: direct.map((dt) => {
         return {
           docileId: dt._id,
@@ -271,14 +280,17 @@ exports.userDetail = async (req, res) => {
         fullName: (parent?.firstName || "") + " " + (parent?.lastName || ""),
         phoneNumber: parent?.phoneNumber,
       },
-      in_progress_with_draws: inProgressWithDraws?.length ? inProgressWithDraws.reduce(function (acc, obj) { return acc + obj.amount; }, 0) : null
+      in_progress_with_draws: inProgressWithDraws?.length
+        ? inProgressWithDraws.reduce(function (acc, obj) {
+            return acc + obj.amount;
+          }, 0)
+        : null,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -299,9 +311,12 @@ exports.updateProfile = async (req, res) => {
       gender,
       aadharNumber,
       bankDetails,
-    }
-    const updatedUser = await User.updateOne({ _id: new ObjectId(user_id) }, { $set: updateObj })
-    res.status(200).send({ success: true, message: "profile updated" })
+    };
+    const updatedUser = await User.updateOne(
+      { _id: new ObjectId(user_id) },
+      { $set: updateObj }
+    );
+    res.status(200).send({ success: true, message: "profile updated" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
