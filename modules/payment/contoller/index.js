@@ -7,7 +7,7 @@ const withDrawRequestModel = require("../model/withdraw_requests");
 const {
   validatePaymentVerification,
 } = require("razorpay/dist/utils/razorpay-utils");
-const User = require("../../user/models/userModel");
+
 var instance = new Razorpay({
   key_id: process.env.RAZORPAY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
@@ -18,7 +18,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { user_id } = req?.user;
     const order = await instance.orders.create({
-      amount: 1500000,
+      amount: process.env.ORDER_AMOUNT,
       currency: "INR",
       receipt: "receipt#1",
       partial_payment: false,
@@ -86,7 +86,9 @@ exports.razorpayCallback = async (req, res) => {
 
     const user = await userModel.findOneAndUpdate(
       { _id: new ObjectId(userOrder?.user_id) },
-      { $set: { walletAmount: 16500, isActivePartner: true } },
+      {
+        $set: { walletAmount: process.env.TOTAL_WALLET, isActivePartner: true },
+      },
       {
         returnDocument: "after",
         returnNewDocument: true,
@@ -101,12 +103,12 @@ exports.razorpayCallback = async (req, res) => {
       if (parentReferel?.bonusCount === 0) {
         updateParent = {
           bonusCount: 1,
-          referelBonus: 1000,
+          referelBonus: process.env.ONE_BONUS,
         };
       } else if (parentReferel?.bonusCount === 1) {
         updateParent = {
           bonusCount: 2,
-          referelBonus: 4000,
+          referelBonus: process.env.PAIR_BONUS,
         };
       }
 
@@ -126,10 +128,9 @@ exports.razorpayCallback = async (req, res) => {
 exports.getPayment = async (req, res) => {
   try {
     // Retrieve all payments and populate the associated user's data
-    const payments = await PaymentModel.find().populate(
-      "user_id",
-      "email bankDetails.fullName phoneNumber"
-    );
+    const payments = await PaymentModel.find()
+      .populate("user_id", "email bankDetails.fullName phoneNumber")
+      .sort({ createdAt: -1 });
 
     // Format the payments to include user info and order details
     const formattedPayments = payments.map((payment) => {
@@ -198,8 +199,9 @@ exports.withDrawRequests = async (req, res) => {
   try {
     const withDraws = await withDrawRequestModel
       .find()
-      .populate("user_id", "-password");
-    const userData = withDraws?.map((data) => ({
+      .populate("user_id", "-password")
+      .sort({ createdAt: -1 });
+    const result = withDraws?.map((data) => ({
       id: data?._id,
       status: data?.status,
       DataTime: data?.createdAt,
@@ -207,9 +209,10 @@ exports.withDrawRequests = async (req, res) => {
       user: {
         ...data?.user_id?.bankDetails,
         docileId: data?.user_id?.phoneNumber,
+        email: data?.user_id?.email,
       },
     }));
-    return res.status(200).json({ success: true, userData });
+    return res.status(200).json({ success: true, result });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
