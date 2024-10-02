@@ -6,6 +6,7 @@ const {
   rootRegister,
   getRootUsers,
   userDetail,
+  updateProfile
 } = require("../controller/user");
 const { authenticateToken } = require("../../../middlewares/authenticate");
 
@@ -16,6 +17,7 @@ router.get("/root-users", getRootUsers);
 
 router.use("", authenticateToken);
 router.get("", userDetail);
+router.patch("", updateProfile);
 
 
 module.exports = router;

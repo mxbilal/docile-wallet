@@ -278,3 +278,32 @@ exports.userDetail = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { user_id } = req?.user;
+    const {
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      aadharNumber,
+      bankDetails,
+    } = req.body;
+
+    const updateObj = {
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      aadharNumber,
+      bankDetails,
+    }
+    const updatedUser = await User.updateOne({ _id: new ObjectId(user_id) }, { $set: updateObj })
+    res.status(200).send({ success: true, message: "profile updated" })
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
