@@ -322,3 +322,76 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.searchUser = async (req, res) => {
+  try {
+    const { phoneNumber, accountNumber } = req.body;
+    if (!phoneNumber || !accountNumber) {
+      return res.status(200).json({
+        success: false,
+        message: "PhoneNumber and accountNumber is required",
+      });
+    }
+    const user = await User.findOne({
+      phoneNumber,
+      "bankDetails.accountNumber": accountNumber,
+    });
+    if (!user) {
+      return res.status(200).json({
+        success: false,
+        message: "User Not Found",
+      });
+    }
+    res.status(200).send({
+      success: true,
+      message: "User Found",
+      data: {
+        id: user._id,
+        fullName: user.bankDetails?.fullName,
+        phoneNumber: user?.phoneNumber,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { phoneNumber, password } = req.body;
+    if (!phoneNumber || !password) {
+      return res.status(200).json({
+        success: false,
+        message: "PhoneNumber and Password is required",
+      });
+    }
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const updatedUser = await User.updateOne(
+      { phoneNumber },
+      { $set: { password: hashedPassword } }
+    );
+    if (!updatedUser) {
+      return res.status(200).json({
+        success: false,
+        message: "Password not changed, Please try again",
+      });
+    }
+    console.log(updatedUser);
+    res.status(200).send({
+      success: true,
+      message: "Password Changed Successfully",
+      data: {
+        id: updatedUser._id,
+        fullName: updatedUser.bankDetails?.fullName,
+        phoneNumber: updatedUser?.phoneNumber,
+        email: updatedUser.email,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
