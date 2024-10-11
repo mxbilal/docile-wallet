@@ -4,9 +4,7 @@ const PaymentModel = require("../model");
 var ObjectId = require("mongoose").Types.ObjectId;
 const userModel = require("../../user/models/userModel");
 const withDrawRequestModel = require("../model/withdraw_requests");
-const {
-  validatePaymentVerification,
-} = require("razorpay/dist/utils/razorpay-utils");
+const { validatePaymentVerification } = require("razorpay/dist/utils/razorpay-utils");
 
 var instance = new Razorpay({
   key_id: process.env.RAZORPAY_ID,
@@ -38,12 +36,7 @@ exports.createOrder = async (req, res) => {
 
 exports.razorpayCallback = async (req, res) => {
   try {
-    const {
-      razorpay_payment_id,
-      razorpay_order_id,
-      razorpay_signature,
-      error,
-    } = req?.body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, error } = req?.body;
     console.log(error);
     if (error) {
       return res.redirect(process.env.ERROR_PAGE);
@@ -112,10 +105,7 @@ exports.razorpayCallback = async (req, res) => {
         };
       }
 
-      await userModel.updateOne(
-        { _id: new ObjectId(parentReferel?._id) },
-        { $set: updateParent }
-      );
+      await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent });
     }
 
     return res.redirect(process.env.SUCCESS_PAGE);
@@ -146,9 +136,7 @@ exports.getPayment = async (req, res) => {
         order: {
           amount: (payment?.order?.amount || 0) / 100,
           time: payment?.updatedAt,
-          status: payment?.order
-            ? payStatus[payment?.order?.status] || "Failed"
-            : "No order",
+          status: payment?.order ? payStatus[payment?.order?.status] || "Failed" : "No order",
         },
       };
     });
@@ -186,9 +174,7 @@ exports.withDrawRequest = async (req, res) => {
       amount,
     });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "withdraw requested" });
+    return res.status(200).json({ success: true, message: "withdraw requested" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -224,11 +210,7 @@ exports.updateWithDrawRequest = async (req, res) => {
     const { id } = req?.params;
     const { status } = req?.body;
 
-    const request = await withDrawRequestModel.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const request = await withDrawRequestModel.findByIdAndUpdate(id, { status }, { new: true });
     if (status === "rejected") {
       await userModel?.updateOne(
         { _id: new ObjectId(request?.user_id) },
@@ -239,5 +221,131 @@ exports.updateWithDrawRequest = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.addbonus = async (req, res) => {
+  try {
+    const { id } = req?.params;
+    const user = await userModel.findOne({ _id: new ObjectId(id) });
+
+    if (!user?.parentReferel?.parentId) {
+      // If no parent, simply activate the user and set wallet amount
+      await activateUser(id);
+    } else {
+      // Activate the user and set wallet amount
+      await activateUser(id);
+
+      const { parentReferel, parentIds } = user;
+
+      // Fetch parent's leftCount and rightCount
+      const parent = await userModel.findOne({ _id: new ObjectId(parentReferel?.parentId) });
+
+      if (!parent) {
+        return res.status(400).json({ success: false, message: "Parent not found" });
+      }
+
+      const { leftCount, rightCount } = parent; // Now checking the parent's leftCount and rightCount
+      let updatedCountsAndBonus = {};
+
+      // Handle the case where the referral side is "L" (Left)
+      if (parentReferel.referralType === "L") {
+        if (rightCount > leftCount) {
+          updatedCountsAndBonus = {
+            leftCount: leftCount + 1,
+            referelBonus:
+              parent.referelBonus +
+              parseFloat(process.env.ONE_BONUS) +
+              parseFloat(process.env.PAIR_BONUS),
+          };
+          const updatedParent = await updateParentBonus(
+            parentReferel.parentId,
+            updatedCountsAndBonus
+          );
+
+          // If the counts are less than 6, reward all parents in the hierarchy
+          if (updatedParent.leftCount < 6 || updatedParent.rightCount < 6) {
+            await givePairBonusToParentHierarchy(parent.parentIds);
+          }
+        } else {
+          // Only increase leftCount and give one bonus
+          updatedCountsAndBonus = {
+            leftCount: leftCount + 1,
+            referelBonus: parent.referelBonus + parseFloat(process.env.ONE_BONUS),
+          };
+          await updateParentBonus(parentReferel.parentId, updatedCountsAndBonus);
+        }
+      }
+      // Handle the case where the referral side is "R" (Right)
+      else if (parentReferel.referralType === "R") {
+        if (leftCount > rightCount) {
+          updatedCountsAndBonus = {
+            rightCount: rightCount + 1,
+            referelBonus:
+              parent.referelBonus +
+              parseFloat(process.env.ONE_BONUS) +
+              parseFloat(process.env.PAIR_BONUS),
+          };
+          const updatedParent = await updateParentBonus(
+            parentReferel.parentId,
+            updatedCountsAndBonus
+          );
+
+          // If the counts are less than 6, reward all parents in the hierarchy
+          if (updatedParent.leftCount < 6 || updatedParent.rightCount < 6) {
+            await givePairBonusToParentHierarchy(parentIds);
+          }
+        } else {
+          // Only increase rightCount and give one bonus
+          updatedCountsAndBonus = {
+            rightCount: rightCount + 1,
+            referelBonus: parent.referelBonus + parseFloat(process.env.ONE_BONUS),
+          };
+          await updateParentBonus(parentReferel.parentId, updatedCountsAndBonus);
+        }
+      } else {
+        return res.json("Something went wrong");
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "Bonus added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Function to activate a user and set wallet amount
+const activateUser = async (id) => {
+  return await userModel.findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    {
+      $set: {
+        walletAmount: parseFloat(process.env.TOTAL_WALLET),
+        isActivePartner: true,
+      },
+    },
+    { returnDocument: "after", returnNewDocument: true }
+  );
+};
+
+// Function to update the parent's counts and bonus
+const updateParentBonus = async (parentId, updateData) => {
+  return await userModel.findOneAndUpdate(
+    { _id: new ObjectId(parentId) },
+    { $set: updateData },
+    { returnDocument: "after", returnNewDocument: true }
+  );
+};
+
+// Function to reward all parents in the hierarchy with pair bonuses
+const givePairBonusToParentHierarchy = async (parentIds) => {
+  if (parentIds && parentIds.length > 0) {
+    for (let parentId of parentIds) {
+      await userModel.findOneAndUpdate(
+        { _id: new ObjectId(parentId) },
+        { $inc: { referelBonus: parseFloat(process.env.PAIR_BONUS) } }
+      );
+    }
   }
 };

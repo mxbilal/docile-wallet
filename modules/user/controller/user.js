@@ -29,25 +29,18 @@ exports.register = async (req, res) => {
         .status(400)
         .json({ success: false, message: "User already exists" });
     }
-    const child = await User.find({
-      "parentReferel.parentId": parentReferel.parentId,
+
+    const parent = await User.findOne({
+      _id: new ObjectId(parentReferel.parentId),
     });
-    if (child.length > 1) {
+    if (!parent) {
       return res.status(400).json({
         success: false,
-        message: "This leader already have complete pair",
+        message: "Parent not found",
       });
     }
-    if (
-      child.some(
-        (a) => a.parentReferel.referralType === parentReferel?.referralType
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: `Referel Type of side ${parentReferel.referralType}  already exist`,
-      });
-    }
+
+    const parentIds = [...parent.parentIds, parentReferel.parentId];
 
     const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -63,6 +56,7 @@ exports.register = async (req, res) => {
       gender,
       aadharNumber,
       parentReferel,
+      parentIds,
       bankDetails,
     });
 
@@ -191,6 +185,7 @@ exports.rootRegister = async (req, res) => {
       dateOfBirth,
       gender,
       bankDetails,
+      parentIds: [],
     });
 
     res.status(201).json({

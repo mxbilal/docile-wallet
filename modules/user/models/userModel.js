@@ -40,12 +40,15 @@ const userSchema = new mongoose.Schema(
     aadharNumber: { type: String },
     isActivePartner: { type: Boolean, default: false },
     bonusCount: { type: Number, default: 0 },
+    leftCount: { type: Number, default: 0 },
+    rightCount: { type: Number, default: 0 },
     walletAmount: { type: Number, default: 0 },
     referelBonus: { type: Number, default: 0 },
     parentReferel: {
       parentId: String,
       referralType: String,
     },
+    parentIds: { type: [String], default: [] },
     bankDetails: {
       accountNumber: { type: String, required: true },
       IFSCcode: { type: String, required: true },

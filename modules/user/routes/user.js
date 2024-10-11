@@ -20,4 +20,5 @@ router.get("", userDetail);
 router.patch("", updateProfile);
 
 
+
 module.exports = router;
