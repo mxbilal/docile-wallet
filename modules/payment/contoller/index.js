@@ -77,36 +77,37 @@ exports.razorpayCallback = async (req, res) => {
     );
     ``;
 
-    const user = await userModel.findOneAndUpdate(
-      { _id: new ObjectId(userOrder?.user_id) },
-      {
-        $set: { walletAmount: process.env.TOTAL_WALLET, isActivePartner: true },
-      },
-      {
-        returnDocument: "after",
-        returnNewDocument: true,
-      }
-    );
+    // const user = await userModel.findOneAndUpdate(
+    //   { _id: new ObjectId(userOrder?.user_id) },
+    //   {
+    //     $set: { walletAmount: process.env.TOTAL_WALLET, isActivePartner: true },
+    //   },
+    //   {
+    //     returnDocument: "after",
+    //     returnNewDocument: true,
+    //   }
+    // );
 
-    if (user?.parentReferel?.parentId) {
-      const parentReferel = await userModel.findOne({
-        _id: new ObjectId(user?.parentReferel?.parentId),
-      });
-      let updateParent = {};
-      if (parentReferel?.bonusCount === 0) {
-        updateParent = {
-          bonusCount: 1,
-          referelBonus: process.env.ONE_BONUS,
-        };
-      } else if (parentReferel?.bonusCount === 1) {
-        updateParent = {
-          bonusCount: 2,
-          referelBonus: process.env.PAIR_BONUS,
-        };
-      }
+    // if (user?.parentReferel?.parentId) {
+    //   const parentReferel = await userModel.findOne({
+    //     _id: new ObjectId(user?.parentReferel?.parentId),
+    //   });
+    //   let updateParent = {};
+    //   if (parentReferel?.bonusCount === 0) {
+    //     updateParent = {
+    //       bonusCount: 1,
+    //       referelBonus: process.env.ONE_BONUS,
+    //     };
+    //   } else if (parentReferel?.bonusCount === 1) {
+    //     updateParent = {
+    //       bonusCount: 2,
+    //       referelBonus: process.env.PAIR_BONUS,
+    //     };
+    //   }
 
-      await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent });
-    }
+    //   await userModel.updateOne({ _id: new ObjectId(parentReferel?._id) }, { $set: updateParent });
+    // }
+    await addbonus(userOrder?.user_id)
 
     return res.redirect(process.env.SUCCESS_PAGE);
   } catch (err) {
@@ -224,9 +225,8 @@ exports.updateWithDrawRequest = async (req, res) => {
   }
 };
 
-exports.addbonus = async (req, res) => {
+const addbonus = async (id) => {
   try {
-    const { id } = req?.params;
     const user = await userModel.findOne({ _id: new ObjectId(id) });
 
     if (!user?.parentReferel?.parentId) {
@@ -242,7 +242,7 @@ exports.addbonus = async (req, res) => {
       const parent = await userModel.findOne({ _id: new ObjectId(parentReferel?.parentId) });
 
       if (!parent) {
-        return res.status(400).json({ success: false, message: "Parent not found" });
+        throw "Parent not found";
       }
 
       const { leftCount, rightCount } = parent; // Now checking the parent's leftCount and rightCount
@@ -304,14 +304,14 @@ exports.addbonus = async (req, res) => {
           await updateParentBonus(parentReferel.parentId, updatedCountsAndBonus);
         }
       } else {
-        return res.json("Something went wrong");
+        throw "Something went wrong";
       }
     }
 
-    return res.status(200).json({ success: true, message: "Bonus added successfully" });
+    return
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    throw "Something went wrong";
   }
 };
 
