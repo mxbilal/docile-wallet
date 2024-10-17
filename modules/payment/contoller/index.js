@@ -13,7 +13,7 @@ var instance = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET,
 });
 
-const payStatus = { created: "Pending", captured: "Paid" };
+const payStatus = { created: "Pending", captured: "Paid", failed: "Failed" };
 exports.createOrder = async (req, res) => {
   try {
     const { user_id } = req?.user;
@@ -46,6 +46,15 @@ exports.razorpayCallback = async (req, res) => {
     } = req?.body;
     console.log(error);
     if (error) {
+      const metadata = JSON.parse(error.metadata);
+      await PaymentModel.updateOne(
+        { "order.id": metadata?.order_id },
+        {
+          $set: {
+            "order.status": "failed",
+          },
+        }
+      );
       return res.redirect(process.env.ERROR_PAGE);
     }
 
@@ -127,9 +136,20 @@ exports.razorpayCallback = async (req, res) => {
 
 exports.getPayment = async (req, res) => {
   try {
+    const { status, page_no } = req.query;
+    let filter = {};
+    if (status) {
+      filter = {
+        "order.status": status,
+      };
+    }
+
+    const total_records = await PaymentModel.countDocuments(filter);
     // Retrieve all payments and populate the associated user's data
-    const payments = await PaymentModel.find()
+    const payments = await PaymentModel.find(filter)
       .populate("user_id", "email bankDetails.fullName phoneNumber")
+      .limit(process.env.PAGINATION_PER_PAGE)
+      .skip(parseInt(process.env.PAGINATION_PER_PAGE) * (page_no - 1))
       .sort({ createdAt: -1 });
 
     // Format the payments to include user info and order details
@@ -153,7 +173,7 @@ exports.getPayment = async (req, res) => {
       };
     });
 
-    res.status(200).json({ result: formattedPayments });
+    res.status(200).json({ result: formattedPayments, total_records });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -197,9 +217,18 @@ exports.withDrawRequest = async (req, res) => {
 
 exports.withDrawRequests = async (req, res) => {
   try {
+    const { status, page_no } = req.query;
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+    const total_records = await withDrawRequestModel.countDocuments(filter);
+
     const withDraws = await withDrawRequestModel
-      .find()
+      .find(filter)
       .populate("user_id", "-password")
+      .limit(parseInt(process.env.PAGINATION_PER_PAGE))
+      .skip(parseInt(process.env.PAGINATION_PER_PAGE) * (page_no - 1))
       .sort({ createdAt: -1 });
     const result = withDraws?.map((data) => ({
       id: data?._id,
@@ -212,7 +241,7 @@ exports.withDrawRequests = async (req, res) => {
         email: data?.user_id?.email,
       },
     }));
-    return res.status(200).json({ success: true, result });
+    return res.status(200).json({ success: true, result, total_records });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
