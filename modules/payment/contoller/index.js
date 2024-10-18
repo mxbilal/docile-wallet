@@ -137,6 +137,8 @@ exports.razorpayCallback = async (req, res) => {
 exports.getPayment = async (req, res) => {
   try {
     const { status, page_no } = req.query;
+    let pageNo = page_no,
+      perPage = parseInt(process.env.PAGINATION_PER_PAGE);
     let filter = {};
     if (status) {
       filter = {
@@ -145,11 +147,16 @@ exports.getPayment = async (req, res) => {
     }
 
     const total_records = await PaymentModel.countDocuments(filter);
+
+    if (!page_no) {
+      pageNo = 1;
+      perPage = total_records;
+    }
     // Retrieve all payments and populate the associated user's data
     const payments = await PaymentModel.find(filter)
       .populate("user_id", "email bankDetails.fullName phoneNumber")
-      .limit(process.env.PAGINATION_PER_PAGE)
-      .skip(parseInt(process.env.PAGINATION_PER_PAGE) * (page_no - 1))
+      .limit(perPage)
+      .skip(perPage * (pageNo - 1))
       .sort({ createdAt: -1 });
 
     // Format the payments to include user info and order details
@@ -218,18 +225,26 @@ exports.withDrawRequest = async (req, res) => {
 exports.withDrawRequests = async (req, res) => {
   try {
     const { status, page_no } = req.query;
+    let pageNo = page_no,
+      perPage = parseInt(process.env.PAGINATION_PER_PAGE);
+
     const filter = {};
     if (status) {
       filter.status = status;
     }
     const total_records = await withDrawRequestModel.countDocuments(filter);
+    if (!page_no) {
+      pageNo = 1;
+      perPage = total_records;
+    }
 
     const withDraws = await withDrawRequestModel
       .find(filter)
       .populate("user_id", "-password")
-      .limit(parseInt(process.env.PAGINATION_PER_PAGE))
-      .skip(parseInt(process.env.PAGINATION_PER_PAGE) * (page_no - 1))
+      .limit(perPage)
+      .skip(perPage * (pageNo - 1))
       .sort({ createdAt: -1 });
+
     const result = withDraws?.map((data) => ({
       id: data?._id,
       status: data?.status,
