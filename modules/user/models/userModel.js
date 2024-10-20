@@ -6,10 +6,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please enter an email"],
       unique: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email",
-      ],
+      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please enter a valid email"],
     },
     password: {
       type: String,
@@ -52,7 +49,7 @@ const userSchema = new mongoose.Schema(
       SWIFTcode: { type: String, required: false },
       bankName: { type: String, required: true },
       branchName: { type: String, required: true },
-      panNumber: { type: String, required: true },
+      panNumber: { type: String, required: false },
       fullName: { type: String, required: true },
     },
   },
