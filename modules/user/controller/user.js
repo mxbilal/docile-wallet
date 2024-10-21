@@ -225,7 +225,7 @@ exports.getRootUsers = async (req, res) => {
         return {
           docileId: user._id,
           email: user.email,
-          fullName: user.bankDetails.fullName,
+          fullName: user.bankDetails.fullName ?? `${user?.firstName} ${user?.lastName}`,
           phoneNumber: user.phoneNumber,
           isActivePartner: user.isActivePartner,
           created_by: user?.created_by,
