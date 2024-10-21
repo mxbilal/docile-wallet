@@ -218,7 +218,8 @@ exports.getRootUsers = async (req, res) => {
     const perPage = parseInt(process.env.PAGINATION_PER_PAGE);
     const total_users = await User.countDocuments({ "parentReferel.parentId": null })
     const users = await User.find({ "parentReferel.parentId": null })
-    .limit(perPage).skip((perPage * (page_no -1)));
+    .limit(perPage).skip((perPage * (page_no -1))).sort({ createdAt: -1 })
+    
     res.status(200).json({
       success: true,
       users: users.map((user) => {
