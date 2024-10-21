@@ -27,12 +27,17 @@ const userSchema = new mongoose.Schema(
     },
     dateOfBirth: {
       type: Date,
-      required: [true, "Please enter your date of birth"],
+      required: [false, "Please enter your date of birth"],
     },
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
-      required: [true, "Please specify your gender"],
+      required: [false, "Please specify your gender"],
+    },
+    created_by: {
+      type: String,
+      enum: ["super_admin", "self"],
+      default: "self"
     },
     aadharNumber: { type: String },
     isActivePartner: { type: Boolean, default: false },
@@ -44,13 +49,13 @@ const userSchema = new mongoose.Schema(
       referralType: String,
     },
     bankDetails: {
-      accountNumber: { type: String, required: true },
-      IFSCcode: { type: String, required: true },
+      accountNumber: { type: String, required: false },
+      IFSCcode: { type: String, required: false },
       SWIFTcode: { type: String, required: false },
-      bankName: { type: String, required: true },
-      branchName: { type: String, required: true },
+      bankName: { type: String, required: false },
+      branchName: { type: String, required: false },
       panNumber: { type: String, required: false },
-      fullName: { type: String, required: true },
+      fullName: { type: String, required: false },
     },
   },
   { timestamps: true }

@@ -9,6 +9,7 @@ const {
   updateProfile,
   searchUser,
   changePassword,
+  createRootUserByAdmin
 } = require("../controller/user");
 const { authenticateToken } = require("../../../middlewares/authenticate");
 
@@ -17,6 +18,7 @@ router.post("/register", register);
 router.post("/search-user", searchUser);
 router.post("/change-password", changePassword);
 router.post("/root-register", rootRegister);
+router.post("/create/root", createRootUserByAdmin);
 router.get("/root-users", getRootUsers);
 
 router.use("", authenticateToken);

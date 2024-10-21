@@ -133,6 +133,8 @@ exports.login = async (req, res) => {
         docileWallet: user.walletAmount,
         referralBonus: user.referelBonus,
         phoneNumber: user?.phoneNumber,
+        bank_details: user?.bankDetails,
+        created_by: user?.created_by
       },
       directPartners: direct.map((dt) => {
         return {
@@ -212,7 +214,11 @@ exports.rootRegister = async (req, res) => {
 
 exports.getRootUsers = async (req, res) => {
   try {
-    const users = await User.find({ "parentReferel.parentId": null });
+    const { page_no } = req.query;
+    const perPage = parseInt(process.env.PAGINATION_PER_PAGE);
+    const total_users = await User.countDocuments({ "parentReferel.parentId": null })
+    const users = await User.find({ "parentReferel.parentId": null })
+    .limit(perPage).skip((perPage * (page_no -1)));
     res.status(200).json({
       success: true,
       users: users.map((user) => {
@@ -222,8 +228,11 @@ exports.getRootUsers = async (req, res) => {
           fullName: user.bankDetails.fullName,
           phoneNumber: user.phoneNumber,
           isActivePartner: user.isActivePartner,
+          created_by: user?.created_by,
+          bank_details: user?.bankDetails
         };
       }),
+      total_users
     });
   } catch (err) {
     console.error(err);
@@ -263,6 +272,7 @@ exports.userDetail = async (req, res) => {
         aadharNumber: user?.aadharNumber,
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
+        created_by: user?.created_by
       },
       bankDetails: user.bankDetails,
       directPartners: direct.map((dt) => {
@@ -388,6 +398,58 @@ exports.changePassword = async (req, res) => {
         fullName: updatedUser.bankDetails?.fullName,
         phoneNumber: updatedUser?.phoneNumber,
         email: updatedUser.email,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.createRootUserByAdmin = async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      phoneNumber,
+    } = req.body;
+
+    const userExists = await User.findOne({
+      $or: [{ email }, { phoneNumber }],
+    });
+    if (userExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      phoneNumber,
+      created_by: "super_admin",
+      isActivePartner: true,
+      walletAmount: process.env.TOTAL_WALLET
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "root user registered successfully",
+      user: {
+        docileId: newUser._id,
+        email: newUser.email,
+        fullName: newUser.bankDetails.fullName ?? `${newUser?.firstName} ${newUser?.lastName}`,
+        dateOfJoin: newUser.createdAt,
+        phoneNumber: newUser.phoneNumber,
+        bank_details: newUser?.bankDetails
       },
     });
   } catch (err) {
