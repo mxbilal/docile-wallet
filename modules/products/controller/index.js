@@ -1,0 +1,62 @@
+require("dotenv").config();
+const XLSX = require("xlsx");
+const Product = require("../model");
+
+exports.uploadProducts = async (req, res) => {
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0]; // Assuming data is in the first sheet
+    const options = { header: 1, range: 1 }; // `header: 1` treats first row as headers, `range: 1` starts from the second row
+
+    // Convert the sheet data to JSON format, skipping the first row (headers)
+    const rawData = XLSX.utils.sheet_to_json(
+      workbook.Sheets[sheetName],
+      options
+    );
+    const bulkOps = rawData.map((row) => {
+      return {
+        updateOne: {
+          filter: { itemCode: row[0] }, // Assuming Item Code is in the first column (A)
+          update: {
+            productPicture: row[1], // B2 (Product Picture)
+            productName: row[2], // C2 (Product Name)
+            mrpInInr: row[3], // D2 (MRP in INR)
+            discountedPrice: row[4], // E2 (Discounted Price in INR)
+            priceInInr: 10, // F2 (Price in INR)
+          },
+          upsert: true, // Insert if no matching product
+        },
+      };
+    });
+    await Product.bulkWrite(bulkOps);
+
+    res.status(200).json({ message: "Products successfully inserted/updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error processing file" });
+  }
+};
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const { page_no } = req.query;
+    let pageNo = page_no;
+    let perPage = parseInt(process.env.PAGINATION_PER_PAGE);
+
+    const total_products = await Product.countDocuments();
+    if (!page_no) {
+      pageNo = 1;
+      perPage = total_products;
+    }
+
+    const products = await Product.find()
+      .limit(perPage)
+      .skip(perPage * (pageNo - 1))
+      .sort({ createdAt: -1 });
+
+    return res.status(200).send({ success: true, products, total_products });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
