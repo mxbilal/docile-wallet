@@ -16,12 +16,15 @@ exports.uploadProducts = async (req, res) => {
     const bulkOps = rawData.map((row) => {
       return {
         updateOne: {
-          filter: { itemCode: row[0] }, // Assuming Item Code is in the first column (A)
+          filter: { itemCode: row[1] }, // Assuming Item Code is in the first column (A)
           update: {
-            productPicture: row[1], // B2 (Product Picture)
+            productPicture: row[0], // B2 (Product Picture)
             productName: row[2], // C2 (Product Name)
-            mrpInInr: row[3], // D2 (MRP in INR)
-            discountedPrice: row[4], // E2 (Discounted Price in INR)
+            weight: row[3],
+            mrpInInr: row[4], // D2 (MRP in INR)
+            discountedPrice: row[5], // E2 (Discounted Price in INR)
+            cash_back: row[6],
+            status: row[7],
             priceInInr: 10, // F2 (Price in INR)
           },
           upsert: true, // Insert if no matching product
@@ -75,21 +78,23 @@ exports.updateProduct = async (req, res) => {
   try {
     const { item_code } = req?.params;
     const {
-      productPicture,
-      productName,
-      mrpInInr,
-      discountedPrice,
-      priceInInr,
-      cash_back
+      productPicture,   
+      weight,
+      mrpInInr, 
+      discountedPrice, 
+      cash_back,
+      status,
+      priceInInr
     } = req.body;
 
     const updateObj = {
-      productPicture,
-      productName,
-      mrpInInr,
-      discountedPrice,
-      priceInInr,
-      cash_back
+      productPicture,   
+      weight,
+      mrpInInr, 
+      discountedPrice, 
+      cash_back,
+      status,
+      priceInInr
     };
     await Product.updateOne(
       { itemCode: item_code },

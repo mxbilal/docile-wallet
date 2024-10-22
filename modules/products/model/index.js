@@ -10,6 +10,15 @@ const ProductSchema = new mongoose.Schema({
   cash_back: {
     type: Number,
     default: 0
+  },
+  weight: {
+    type: Number,
+    default: 0
+  },
+  status: {
+    type: String,
+    enum: ["active", "in-active"],
+    default: "active"
   }
 });
 
