@@ -7,6 +7,10 @@ const ProductSchema = new mongoose.Schema({
   mrpInInr: Number,
   discountedPrice: Number,
   priceInInr: Number,
+  cash_back: {
+    type: Number,
+    default: 0
+  }
 });
 
 const Product = mongoose.model("Product", ProductSchema);

@@ -39,17 +39,26 @@ exports.uploadProducts = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const { page_no } = req.query;
+    const { page_no, search } = req.query;
+    let filter = {};
+    if(search) {
+      filter = {
+        $or: [
+          { itemCode: { $regex: search, $options: 'i' } },
+          { productName: { $regex: search, $options: 'i' } }
+        ]
+      }
+    }
     let pageNo = page_no;
     let perPage = parseInt(process.env.PAGINATION_PER_PAGE);
 
-    const total_products = await Product.countDocuments();
+    const total_products = await Product.countDocuments(filter);
     if (!page_no) {
       pageNo = 1;
       perPage = total_products;
     }
 
-    const products = await Product.find()
+    const products = await Product.find(filter)
       .limit(perPage)
       .skip(perPage * (pageNo - 1))
       .sort({ createdAt: -1 });
@@ -58,5 +67,37 @@ exports.getAllProducts = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+exports.updateProduct = async (req, res) => {
+  try {
+    const { item_code } = req?.params;
+    const {
+      productPicture,
+      productName,
+      mrpInInr,
+      discountedPrice,
+      priceInInr,
+      cash_back
+    } = req.body;
+
+    const updateObj = {
+      productPicture,
+      productName,
+      mrpInInr,
+      discountedPrice,
+      priceInInr,
+      cash_back
+    };
+    await Product.updateOne(
+      { itemCode: item_code },
+      { $set: updateObj }
+    );
+    res.status(200).send({ success: true, message: "product updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
