@@ -63,8 +63,7 @@ exports.getAllProducts = async (req, res) => {
 
     const products = await Product.find(filter)
       .limit(perPage)
-      .skip(perPage * (pageNo - 1))
-      .sort({ createdAt: -1 });
+      .skip(perPage * (pageNo - 1));
 
     return res.status(200).send({ success: true, products, total_products });
   } catch (err) {
