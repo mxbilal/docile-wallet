@@ -42,18 +42,18 @@ exports.uploadProducts = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const { page_no, search } = req.query;
+    const { page_no, search, per_page } = req.query;
     let filter = {};
-    if(search) {
+    if (search) {
       filter = {
         $or: [
-          { itemCode: { $regex: search, $options: 'i' } },
-          { productName: { $regex: search, $options: 'i' } }
-        ]
-      }
+          { itemCode: { $regex: search, $options: "i" } },
+          { productName: { $regex: search, $options: "i" } },
+        ],
+      };
     }
     let pageNo = page_no;
-    let perPage = parseInt(process.env.PAGINATION_PER_PAGE);
+    let perPage = per_page;
 
     const total_products = await Product.countDocuments(filter);
     if (!page_no) {
@@ -73,33 +73,29 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-
 exports.updateProduct = async (req, res) => {
   try {
     const { item_code } = req?.params;
     const {
-      productPicture,   
+      productPicture,
       weight,
-      mrpInInr, 
-      discountedPrice, 
+      mrpInInr,
+      discountedPrice,
       cash_back,
       status,
-      priceInInr
+      priceInInr,
     } = req.body;
 
     const updateObj = {
-      productPicture,   
+      productPicture,
       weight,
-      mrpInInr, 
-      discountedPrice, 
+      mrpInInr,
+      discountedPrice,
       cash_back,
       status,
-      priceInInr
+      priceInInr,
     };
-    await Product.updateOne(
-      { itemCode: item_code },
-      { $set: updateObj }
-    );
+    await Product.updateOne({ itemCode: item_code }, { $set: updateObj });
     res.status(200).send({ success: true, message: "product updated" });
   } catch (err) {
     console.error(err);
