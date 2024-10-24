@@ -214,10 +214,22 @@ exports.rootRegister = async (req, res) => {
 
 exports.getRootUsers = async (req, res) => {
   try {
-    const { page_no } = req.query;
+    const { page_no, search } = req.query;
     const perPage = parseInt(process.env.PAGINATION_PER_PAGE);
-    const total_users = await User.countDocuments({ "parentReferel.parentId": null })
-    const users = await User.find({ "parentReferel.parentId": null })
+
+    let filter = {};
+    if(search) {
+      filter = {
+        $or: [
+          { phoneNumber: { $regex: search, $options: 'i' } },
+          { firstName: { $regex: search, $options: 'i' } },
+          { lastName: { $regex: search, $options: 'i' } }
+        ]
+      }
+    }
+
+    const total_users = await User.countDocuments({ "parentReferel.parentId": null, ...filter })
+    const users = await User.find({ "parentReferel.parentId": null, ...filter })
     .limit(perPage).skip((perPage * (page_no -1))).sort({ createdAt: -1 })
     
     res.status(200).json({
